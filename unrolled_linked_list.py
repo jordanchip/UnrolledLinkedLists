@@ -1,6 +1,5 @@
 __author__ = 'Jordan Chipman'
 __email__ = 'jordanchip@gmail.com'
-import copy
 
 
 class UnrolledLinkedList(object):
@@ -55,9 +54,13 @@ class UnrolledLinkedList(object):
         """
         if not isinstance(other, UnrolledLinkedList):
             raise TypeError
+        newList = UnrolledLinkedList(self.max_node_capacity)
+        for i in self:
+            newList.append(i)
         for i in other:
-            self.append(i)
-        return self
+            newList.append(i)
+        return newList
+
         pass
 
     def __mul__(self, count):
@@ -79,13 +82,17 @@ class UnrolledLinkedList(object):
         if not isinstance(count, int):
             raise TypeError
 
-        original = copy.deepcopy(self)
-        for i in range(0, count):
-            nextList = copy.deepcopy(original)
-            self.tail.next = nextList.head
-            self.tail.next.prev = self.tail
-            self.tail = nextList.tail
-        return self
+        if count == 0:
+            return None
+        if count == 1:
+            return self
+
+        newList = self + self
+
+        for i in range(2, count):
+            newList = newList + self
+
+        return newList
         pass
 
     def __getitem__(self, index):
@@ -119,25 +126,63 @@ class UnrolledLinkedList(object):
             IndexError: If the index is out of bounds.
 
         """
+        if isinstance(index, slice):
+            return self.getSlice(index)
         if not isinstance(index, int):
             raise TypeError
         if abs(index) >= self.totalItems:
             raise IndexError
 
-        curNode = self.head
+        curNode, index = self.getNodeForIndex(index)
+        return curNode.items[index]
+
+    def getNodeForIndex(self, index):
+        #Optimize index.  Start from whichever end is closer
+        if index > self.totalItems / 2:
+            index = index - self.totalItems
+        elif index <= self.totalItems / 2 * -1:
+            index = self.totalItems + index
+
         if index >= 0:
+            curNode = self.head
             while index > len(curNode.items) - 1:
                 index -= len(curNode.items)
                 curNode = curNode.next
-            return curNode.items[index]
+            return curNode, index
         else:
             curNode = self.tail
-            index = abs(index)
-            while index > len(curNode.items) - 1:
-                index -= len(curNode.items)
+            #index = abs(index)
+            while index < (len(curNode.items)) * -1:
+                index += len(curNode.items)
                 curNode = curNode.prev
-            return curNode.items[-index]
-        pass
+            return curNode, index
+
+    def getSlice(self, sliced):
+        step = None
+        if sliced.step is None:
+            step = 1
+        else:
+            step = sliced.step
+            
+        realStart = sliced.start
+        if realStart is None:
+            realStart = 0
+        elif realStart < 0:
+            realStart = self.totalItems + realStart
+
+        realStop = sliced.stop
+        if realStop is None:
+            realStop = self.totalItems
+        elif realStop < 0:
+            realStop = self.totalItems + realStop
+
+        newList = UnrolledLinkedList(self.max_node_capacity)
+        while realStart < realStop:
+            newList.append(self[realStart])
+            realStart += step
+
+        return newList
+
 
     def __len__(self):
         """Return the total number of items in the list
@@ -149,7 +194,6 @@ class UnrolledLinkedList(object):
             NOT the number of nodes.
         """
         return self.totalItems
-        pass
 
     def __setitem__(self, index, value):
         """ Sets the item at the given index to a new value
@@ -181,23 +225,12 @@ class UnrolledLinkedList(object):
         """
         if not isinstance(index, int):
             raise TypeError
-        if abs(index) >= self.totalItems:
+        if abs(index) >= self.totalItems and index != self.totalItems * -1:
             raise IndexError
 
-        curNode = self.head
-        if index >= 0:
-            while index > len(curNode.items) - 1:
-                index -= len(curNode.items)
-                curNode = curNode.next
-            curNode.items[index] = value
-        else:
-            curNode = self.tail
-            index = abs(index)
-            while index > len(curNode.items) - 1:
-                index -= len(curNode.items)
-                curNode = curNode.prev
-            curNode.items[-index] = value
-        pass
+        curNode, index = self.getNodeForIndex(index)
+        curNode.items[index] = value
+
 
     def __delitem__(self, index):
         """ Deletes an item using the built-in `del` keyword
@@ -237,23 +270,12 @@ class UnrolledLinkedList(object):
             raise IndexError
         self.removeFromIndex(index)
 
-        pass
 
     def removeFromIndex(self, index):
-        curNode = self.head
-        if index >= 0:
-            while index > len(curNode.items) - 1:
-                index -= len(curNode.items)
-                curNode = curNode.next
-        else:
-            curNode = self.tail
-            index = abs(index)
-            while index > len(curNode.items) - 1:
-                index -= len(curNode.items)
-                curNode = curNode.prev
-
+        curNode, index = self.getNodeForIndex(index)
         del curNode.items[index]
         self.totalItems -= 1
+
         if len(curNode.items) < self.max_node_capacity / 2:
             self.shift(curNode)
 
@@ -281,7 +303,7 @@ class UnrolledLinkedList(object):
     def shiftFromBehind(self, curNode):
         prevNode = curNode.prev
         if len(prevNode.items) - 1 < self.max_node_capacity / 2:
-            #We will now move all the items from the next node into the current
+            #We will now move all the items from the prev node into the current
             prevNode.items.extend(curNode.items)
             curNode.items = prevNode.items
             curNode.prev = prevNode.prev
@@ -357,9 +379,7 @@ class UnrolledLinkedList(object):
 
         """
         #Get to the last node
-        curNode = self.head
-        while curNode.next is not None:
-            curNode = curNode.next
+        curNode = self.tail
 
         if len(curNode.items) < self.max_node_capacity:
             curNode.items.append(data)
@@ -375,7 +395,7 @@ class UnrolledLinkedList(object):
             newNode.prev = curNode
             self.tail = newNode
         self.totalItems += 1
-        pass
+
 
     def __reversed__(self):
         """ Works just like __iter__, but starts from the back.

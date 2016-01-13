@@ -76,6 +76,7 @@ list1[1] = 1
 list1[2] = 2
 list1[3] = 3
 list1[4] = 4
+list1[-5] = 0
 print str(list1)
 assert str(list1) == "{[0, 1, 2, 3, 4]}"
 
@@ -88,21 +89,36 @@ for i in reversed(list1):
     print i
 
 print "TESTING ADDED 2 LISTS TOGETHER"
-list2 = UnrolledLinkedList(2)
+list2 = UnrolledLinkedList(6)
 list2.append(5)
 list2.append(6)
 list2.append(7)
+list2.append(8)
+list2.append(9)
 
 print str(list1)
 print str(list2)
 
 combinedList = list1 + list2
 print str(combinedList)
-assert str(combinedList) == "{[0, 1, 2], [3, 4, 5, 6, 7]}"
+assert str(combinedList) == "{[0, 1, 2], [3, 4, 5], [6, 7, 8, 9]}"
+assert 4 in combinedList
+assert 8 in combinedList
+assert combinedList[-6] == 4
+assert combinedList[5] == 5
+list4 = UnrolledLinkedList(2)
+list4.append(10)
+list4.append(11)
+combinedList += list4
+print str(combinedList)
 
 print "TESTING *="
-combinedList *= 3
+combinedList *= 2
 print str(combinedList)
+length = len(list1)
+list1 *= 5
+print str(list1)
+assert length*5 == len(list1)
 
 print "TESTING STRING LISTS"
 list3 = UnrolledLinkedList(4)
@@ -117,7 +133,35 @@ print str(list3)
 del list3[1]
 print str(list3)
 
+print "TESTING ERRORS"
+try:
+    bad = list1[100]
+    print "Invalid Index BAD"
+except:
+    print "Invalid Index OK"
+try:
+    a = "hi"
+    list1 *= a
+except:
+    print "Type Checking OK"
+try:
+    bad = list1[-60]
+    print "Invalid Index BAD"
+except:
+    print "Invalid Index OK"
 
+print "TESTING SLICING"
+sliceList = UnrolledLinkedList(4)
+sliceList.append(0)
+sliceList.append(1)
+sliceList.append(2)
+sliceList.append(3)
+sliceList.append(4)
+sliceList.append(5)
+sliceList.append(6)
+print str(sliceList)
+sliceList = sliceList[-1:]
+print str(sliceList)
 
 class ExampleTest(unittest.TestCase):
     """ Demonstrates how the unittest framework works """
