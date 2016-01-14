@@ -163,7 +163,7 @@ class UnrolledLinkedList(object):
             step = 1
         else:
             step = sliced.step
-            
+
         realStart = sliced.start
         if realStart is None:
             realStart = 0
@@ -278,6 +278,7 @@ class UnrolledLinkedList(object):
 
         if len(curNode.items) < self.max_node_capacity / 2:
             self.shift(curNode)
+
 
     def shift(self, curNode):
         if curNode.next is not None:
