@@ -130,7 +130,7 @@ class UnrolledLinkedList(object):
             return self.getSlice(index)
         if not isinstance(index, int):
             raise TypeError
-        if abs(index) >= self.totalItems:
+        if abs(index) >= self.totalItems and index * -1 != self.totalItems:
             raise IndexError
 
         curNode, index = self.getNodeForIndex(index)
@@ -387,8 +387,8 @@ class UnrolledLinkedList(object):
             newNode = self.Node(self.max_node_capacity)
 
             itemsToMove = self.max_node_capacity/2
-            newNode.items = curNode.items[itemsToMove:]
-            curNode.items = curNode.items[:itemsToMove]
+            newNode.items = curNode.items[itemsToMove*-1:]
+            curNode.items = curNode.items[:itemsToMove*-1]
             newNode.items.append(data)
 
             curNode.next = newNode
@@ -428,6 +428,10 @@ class UnrolledLinkedList(object):
         Returns:
             A string representation of the list.
         """
+
+        if self.totalItems == 0:
+            return "{}"
+
         listString = ""
         listString += "{"
         curNode = self.head
